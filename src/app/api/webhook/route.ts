@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     for (const event of body.events) {
       if (event.type === "message" && event.message.type === "image") {
         const messageId = event.message.id;
-        const replyToken = event.replyToken;
+        const replyToken = (event as any).replyToken as string;
 
         // 1. Download image from LINE
         const imageRes = await fetch(`https://api-data.line.me/v2/bot/message/${messageId}/content`, {
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
               date: new Date(appointmentData.date),
               location: appointmentData.location || "",
               description: appointmentData.description || "",
-              userId: event.source.userId || null,
+              userId: event.source?.userId || null,
             },
           });
 
@@ -149,7 +149,7 @@ export async function POST(req: NextRequest) {
         }
       } else if (event.type === "message" && event.message.type === "text") {
         await lineClient.replyMessage({
-          replyToken: event.replyToken,
+          replyToken: (event as any).replyToken as string,
           messages: [{ type: "text", text: "ส่งรูปใบนัดหรือการ์ดนัดหมายมาให้ผมจัดการลงปฏิทินได้เลยครับ! 📅" }],
         });
       }
