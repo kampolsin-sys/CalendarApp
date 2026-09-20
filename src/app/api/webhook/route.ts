@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+
+export const maxDuration = 60; // Allow Vercel Hobby plan up to 60 seconds
 import { messagingApi, webhook } from "@line/bot-sdk";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
