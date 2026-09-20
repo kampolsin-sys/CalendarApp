@@ -147,7 +147,7 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
   // Create grid cells
   const days = [];
   for (let i = 0; i < firstDayOfMonth; i++) {
-    days.push(<div key={`empty-${i}`} className="min-h-[80px] bg-gray-50/50 rounded-lg"></div>);
+    days.push(<div key={`empty-${i}`} className="min-h-[110px] sm:min-h-[120px] bg-gray-50/50 rounded-lg"></div>);
   }
 
   for (let d = 1; d <= daysInMonth; d++) {
@@ -166,7 +166,7 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
       <button
         key={d}
         onClick={() => setSelectedDate(new Date(year, month, d))}
-        className={`min-h-[80px] sm:min-h-[100px] w-full flex flex-col items-start justify-start p-1 sm:p-2 rounded-lg border transition-colors overflow-hidden ${
+        className={`min-h-[110px] sm:min-h-[120px] w-full flex flex-col items-start justify-start p-1 sm:p-2 rounded-lg border transition-colors overflow-hidden ${
           isSelected ? "bg-green-50 border-green-500 shadow-sm" : "bg-white border-gray-100 hover:border-green-300"
         }`}
       >
@@ -175,17 +175,23 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
         </span>
         
         <div className="w-full flex flex-col gap-1 overflow-y-auto">
-          {dayAppts.map((appt) => (
-            <div key={appt.id} className="flex flex-col text-[10px] sm:text-xs leading-tight text-left bg-green-100 text-green-800 p-1.5 rounded w-full">
-              {appt.doctorName && <span className="truncate">{appt.doctorName}</span>}
-              {appt.patientName && <span className="truncate">{appt.patientName}</span>}
-              {appt.disease ? (
-                <span className="truncate">{appt.disease}</span>
-              ) : (
-                <span className="truncate">{appt.title}</span>
-              )}
-            </div>
-          ))}
+          {dayAppts.map((appt) => {
+            const stripTitle = (name: string) => {
+              if (!name) return "";
+              return name.replace(/^(นายแพทย์|แพทย์หญิง|นพ\.|พญ\.|ทพ\.|ทญ\.|นาย|นางสาว|นาง|ด\.ช\.|ด\.ญ\.|คุณ)\s*/g, '');
+            };
+            return (
+              <div key={appt.id} className="flex flex-col text-[8px] sm:text-xs leading-[1.1] text-left bg-green-100 text-green-800 p-1 sm:p-1.5 rounded w-full break-words whitespace-normal">
+                {appt.doctorName && <span>{stripTitle(appt.doctorName)}</span>}
+                {appt.patientName && <span>{stripTitle(appt.patientName)}</span>}
+                {appt.disease ? (
+                  <span>{appt.disease}</span>
+                ) : (
+                  <span>{appt.title}</span>
+                )}
+              </div>
+            );
+          })}
         </div>
       </button>
     );
