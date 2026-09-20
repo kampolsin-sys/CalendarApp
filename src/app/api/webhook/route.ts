@@ -26,8 +26,26 @@ export async function POST(req: NextRequest) {
 
     const body: webhook.CallbackRequest = JSON.parse(bodyText);
 
-    // Process events
-    for (const event of body.events) {
+    // Process events in parallel to prevent Vercel timeouts for multiple images
+    await Promise.all(body.events.map(async (event) => {
+      // Helper function to safely reply or push if token expires
+      const safeReply = async (replyToken: string, messages: any[], source: any) => {
+        try {
+          await lineClient.replyMessage({ replyToken, messages });
+        } catch (err: any) {
+          console.error("❌ [Webhook] Reply failed (Token expired?):", err.message);
+          // Fallback to push message if replyToken is invalid
+          const targetId = source.type === "group" ? source.groupId : (source.type === "room" ? source.roomId : source.userId);
+          if (targetId) {
+            try {
+              await lineClient.pushMessage({ to: targetId, messages });
+            } catch (pushErr: any) {
+              console.error("❌ [Webhook] Push fallback failed:", pushErr.message);
+            }
+          }
+        }
+      };
+
       try {
         if (event.type === "message" && event.message.type === "image") {
           const messageId = event.message.id;
@@ -40,7 +58,7 @@ export async function POST(req: NextRequest) {
           const arrayBuffer = await imageRes.arrayBuffer();
           const base64Image = Buffer.from(arrayBuffer).toString("base64");
 
-          // 2. Send image to Gemini via Direct Fetch (Bypassing SDK Auth Bug)
+          // 2. Send image to Gemini via Direct Fetch
           const prompt = `
             คุณคือผู้ช่วยจัดการตารางนัดหมาย 
             โปรดดึงข้อมูลจากการ์ดนัดหมายหรือภาพนี้ และส่งคืนมาในรูปแบบ JSON ดังนี้:
@@ -66,25 +84,17 @@ export async function POST(req: NextRequest) {
           try {
             const response = await model.generateContent([
               prompt,
-              {
-                inlineData: {
-                  data: base64Image,
-                  mimeType: "image/jpeg"
-                }
-              }
+              { inlineData: { data: base64Image, mimeType: "image/jpeg" } }
             ]);
             jsonText = response.response.text() || "{}";
           } catch (error) {
             console.error("❌ [Webhook] Gemini Error:", error);
-            await lineClient.replyMessage({
-              replyToken,
-              messages: [{ type: "text", text: "ขออภัยครับ พบข้อผิดพลาดในการเชื่อมต่อกับ AI ลองใหม่อีกครั้งนะครับ" }],
-            });
-            continue;
+            await safeReply(replyToken, [{ type: "text", text: "ขออภัยครับ พบข้อผิดพลาดในการเชื่อมต่อกับ AI ลองใหม่อีกครั้งนะครับ" }], event.source);
+            return;
           }
+
           let appointmentData: any = {};
           try {
-            // Remove Markdown formatting if Gemini wraps the response in ```json ... ```
             const cleanedJsonText = jsonText.replace(/```json/g, "").replace(/```/g, "").trim();
             appointmentData = JSON.parse(cleanedJsonText);
           } catch (e) {
@@ -95,7 +105,7 @@ export async function POST(req: NextRequest) {
             // 3. Instead of saving, we construct a review URL
             const params = new URLSearchParams();
             params.append("review", "true");
-            params.append("title", appointmentData.title);
+            params.append("title", String(appointmentData.title).substring(0, 100)); // safely truncate title too
             
             const d = new Date(appointmentData.date);
             if (!isNaN(d.getTime())) {
@@ -134,7 +144,7 @@ export async function POST(req: NextRequest) {
                         contents: [
                           { type: "text", text: "🔍 สกัดข้อมูลสำเร็จ!", weight: "bold", size: "xl", color: "#F59E0B" },
                           { type: "text", text: "กรุณาตรวจสอบความถูกต้องก่อนบันทึก", size: "sm", color: "#666666", wrap: true, margin: "sm" },
-                          { type: "text", text: appointmentData.title, weight: "bold", size: "md", margin: "md", wrap: true },
+                          { type: "text", text: String(appointmentData.title), weight: "bold", size: "md", margin: "md", wrap: true },
                           { type: "text", text: `🗓️ เวลา: ${formattedDate}`, size: "sm", color: "#666666", wrap: true },
                         ],
                       },
@@ -159,43 +169,42 @@ export async function POST(req: NextRequest) {
                 ],
               });
             } catch (lineErr) {
-              console.error("LINE Reply Error:", lineErr);
-              // Fallback if flex message fails (e.g. URI too long)
-              await lineClient.replyMessage({
+              console.error("LINE Reply Error (Flex):", lineErr);
+              await safeReply(
                 replyToken,
-                messages: [{ type: "text", text: `สกัดข้อมูลสำเร็จ! แต่ข้อมูลยาวเกินไป โปรดเข้าเว็บเพื่อเพิ่มข้อมูลด้วยตัวเองนะครับ\n\nหัวข้อ: ${appointmentData.title}` }]
-              });
+                [{ type: "text", text: `สกัดข้อมูลสำเร็จ! แต่ข้อมูลยาวเกินไป โปรดเข้าเว็บเพื่อเพิ่มข้อมูลด้วยตัวเองนะครับ\n\nหัวข้อ: ${appointmentData.title}` }],
+                event.source
+              );
             }
           } else {
-            await lineClient.replyMessage({
+            await safeReply(
               replyToken,
-              messages: [{ type: "text", text: "ขออภัยครับ AI ไม่สามารถดึงข้อมูลวันและเวลาจากรูปนี้ได้ชัดเจน ลองส่งรูปใหม่อีกครั้งนะครับ" }],
-            });
+              [{ type: "text", text: "ขออภัยครับ AI ไม่สามารถดึงข้อมูลวันและเวลาจากรูปนี้ได้ชัดเจน ลองส่งรูปใหม่อีกครั้งนะครับ" }],
+              event.source
+            );
           }
         } else if (event.type === "message" && event.message.type === "text") {
           // Ignore text messages in groups to avoid spamming
           if (event.source?.type !== "group" && event.source?.type !== "room") {
-            await lineClient.replyMessage({
-              replyToken: (event as any).replyToken as string,
-              messages: [{ type: "text", text: "ส่งรูปใบนัดหรือการ์ดนัดหมายมาให้ผมจัดการลงปฏิทินได้เลยครับ! 📅" }],
-            });
+            await safeReply(
+              (event as any).replyToken as string,
+              [{ type: "text", text: "ส่งรูปใบนัดหรือการ์ดนัดหมายมาให้ผมจัดการลงปฏิทินได้เลยครับ! 📅" }],
+              event.source
+            );
           }
         }
       } catch (err: any) {
         console.error("❌ [Webhook] Internal Event Error:", err);
         const replyToken = (event as any).replyToken as string;
         if (replyToken) {
-          try {
-            await lineClient.replyMessage({
-              replyToken,
-              messages: [{ type: "text", text: `พบข้อผิดพลาดระบบ: ${err.message}` }],
-            });
-          } catch (e) {
-            console.error("❌ [Webhook] Failed to send fallback error message:", e);
-          }
+          await safeReply(
+            replyToken,
+            [{ type: "text", text: `พบข้อผิดพลาดระบบ: ${err.message}` }],
+            event.source
+          );
         }
       }
-    }
+    }));
 
     return NextResponse.json({ status: "ok" });
   } catch (error) {
