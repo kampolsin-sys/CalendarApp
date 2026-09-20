@@ -102,11 +102,11 @@ export async function POST(req: NextRequest) {
             params.append("time", tString);
           }
 
-          if (appointmentData.doctorName) params.append("doctorName", appointmentData.doctorName);
-          if (appointmentData.patientName) params.append("patientName", appointmentData.patientName);
-          if (appointmentData.disease) params.append("disease", appointmentData.disease);
-          if (appointmentData.location) params.append("location", appointmentData.location);
-          if (appointmentData.description) params.append("description", appointmentData.description);
+          if (appointmentData.doctorName) params.append("doctorName", appointmentData.doctorName.substring(0, 50));
+          if (appointmentData.patientName) params.append("patientName", appointmentData.patientName.substring(0, 50));
+          if (appointmentData.disease) params.append("disease", appointmentData.disease.substring(0, 100));
+          if (appointmentData.location) params.append("location", appointmentData.location.substring(0, 100));
+          if (appointmentData.description) params.append("description", appointmentData.description.substring(0, 200));
 
           const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
           const reviewUrl = `https://${host}/?${params.toString()}`;
@@ -116,44 +116,53 @@ export async function POST(req: NextRequest) {
             ? d.toLocaleString("th-TH", { dateStyle: "long", timeStyle: "short" }) 
             : "ไม่ระบุเวลา";
 
-          await lineClient.replyMessage({
-            replyToken,
-            messages: [
-              {
-                type: "flex",
-                altText: `ตรวจสอบนัดหมาย: ${appointmentData.title}`,
-                contents: {
-                  type: "bubble",
-                  body: {
-                    type: "box",
-                    layout: "vertical",
-                    contents: [
-                      { type: "text", text: "🔍 สกัดข้อมูลสำเร็จ!", weight: "bold", size: "xl", color: "#F59E0B" },
-                      { type: "text", text: "กรุณาตรวจสอบความถูกต้องก่อนบันทึก", size: "sm", color: "#666666", wrap: true, margin: "sm" },
-                      { type: "text", text: appointmentData.title, weight: "bold", size: "md", margin: "md", wrap: true },
-                      { type: "text", text: `🗓️ เวลา: ${formattedDate}`, size: "sm", color: "#666666", wrap: true },
-                    ],
-                  },
-                  footer: {
-                    type: "box",
-                    layout: "vertical",
-                    contents: [
-                      {
-                        type: "button",
-                        style: "primary",
-                        color: "#F59E0B",
-                        action: {
-                          type: "uri",
-                          label: "ตรวจสอบและบันทึก",
-                          uri: reviewUrl,
+          try {
+            await lineClient.replyMessage({
+              replyToken,
+              messages: [
+                {
+                  type: "flex",
+                  altText: `ตรวจสอบนัดหมาย: ${appointmentData.title}`,
+                  contents: {
+                    type: "bubble",
+                    body: {
+                      type: "box",
+                      layout: "vertical",
+                      contents: [
+                        { type: "text", text: "🔍 สกัดข้อมูลสำเร็จ!", weight: "bold", size: "xl", color: "#F59E0B" },
+                        { type: "text", text: "กรุณาตรวจสอบความถูกต้องก่อนบันทึก", size: "sm", color: "#666666", wrap: true, margin: "sm" },
+                        { type: "text", text: appointmentData.title, weight: "bold", size: "md", margin: "md", wrap: true },
+                        { type: "text", text: `🗓️ เวลา: ${formattedDate}`, size: "sm", color: "#666666", wrap: true },
+                      ],
+                    },
+                    footer: {
+                      type: "box",
+                      layout: "vertical",
+                      contents: [
+                        {
+                          type: "button",
+                          style: "primary",
+                          color: "#F59E0B",
+                          action: {
+                            type: "uri",
+                            label: "ตรวจสอบและบันทึก",
+                            uri: reviewUrl.substring(0, 1000),
+                          },
                         },
-                      },
-                    ],
+                      ],
+                    },
                   },
                 },
-              },
-            ],
-          });
+              ],
+            });
+          } catch (lineErr) {
+            console.error("LINE Reply Error:", lineErr);
+            // Fallback if flex message fails (e.g. URI too long)
+            await lineClient.replyMessage({
+              replyToken,
+              messages: [{ type: "text", text: `สกัดข้อมูลสำเร็จ! แต่ข้อมูลยาวเกินไป โปรดเข้าเว็บเพื่อเพิ่มข้อมูลด้วยตัวเองนะครับ\n\nหัวข้อ: ${appointmentData.title}` }]
+            });
+          }
         } else {
           await lineClient.replyMessage({
             replyToken,
