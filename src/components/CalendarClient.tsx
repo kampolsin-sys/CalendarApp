@@ -41,7 +41,7 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
   // Create grid cells
   const days = [];
   for (let i = 0; i < firstDayOfMonth; i++) {
-    days.push(<div key={`empty-${i}`} className="h-10"></div>);
+    days.push(<div key={`empty-${i}`} className="min-h-[80px] bg-gray-50/50 rounded-lg"></div>);
   }
 
   for (let d = 1; d <= daysInMonth; d++) {
@@ -50,8 +50,8 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
       month === selectedDate.getMonth() &&
       year === selectedDate.getFullYear();
       
-    // Check if there's any appointment on this day
-    const hasAppt = appointments.some((appt) => {
+    // Find all appointments on this day
+    const dayAppts = appointments.filter((appt) => {
       const aDate = new Date(appt.date);
       return aDate.getDate() === d && aDate.getMonth() === month && aDate.getFullYear() === year;
     });
@@ -60,22 +60,31 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
       <button
         key={d}
         onClick={() => setSelectedDate(new Date(year, month, d))}
-        className={`h-10 w-full flex items-center justify-center rounded-full text-sm relative transition-colors ${
-          isSelected ? "bg-green-600 text-white font-bold" : "text-gray-700 hover:bg-gray-100"
+        className={`min-h-[80px] sm:min-h-[100px] w-full flex flex-col items-start justify-start p-1 sm:p-2 rounded-lg border transition-colors overflow-hidden ${
+          isSelected ? "bg-green-50 border-green-500 shadow-sm" : "bg-white border-gray-100 hover:border-green-300"
         }`}
       >
-        {d}
-        {hasAppt && !isSelected && (
-          <span className="absolute bottom-1 w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-        )}
+        <span className={`text-xs sm:text-sm font-semibold mb-1 ${isSelected ? "text-green-700" : "text-gray-700"}`}>
+          {d}
+        </span>
+        
+        <div className="w-full flex flex-col gap-1 overflow-y-auto hidden-scrollbar">
+          {dayAppts.map((appt) => (
+            <div key={appt.id} className="text-[9px] sm:text-[10px] leading-tight text-left bg-green-100 text-green-800 p-1 rounded w-full truncate">
+              {appt.doctorName ? `👨‍⚕️${appt.doctorName} ` : ''}
+              {appt.patientName ? `👤${appt.patientName} ` : ''}
+              {appt.disease ? `💊${appt.disease}` : appt.title}
+            </div>
+          ))}
+        </div>
       </button>
     );
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Calendar Header */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+    <div className="flex flex-col lg:flex-row gap-6">
+      {/* Calendar Header & Grid */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 lg:w-2/3">
         <div className="flex items-center justify-between mb-4">
           <button onClick={prevMonth} className="p-2 text-gray-500 hover:bg-gray-100 rounded-full">
             ◀
@@ -91,20 +100,20 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
         {/* Days of week */}
         <div className="grid grid-cols-7 gap-1 text-center mb-2">
           {dayNames.map((day, idx) => (
-            <div key={day} className={`text-xs font-medium ${idx === 0 ? "text-red-500" : "text-gray-500"}`}>
+            <div key={day} className={`text-xs sm:text-sm font-medium ${idx === 0 ? "text-red-500" : "text-gray-500"}`}>
               {day}
             </div>
           ))}
         </div>
 
         {/* Calendar Grid */}
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-1 sm:gap-2">
           {days}
         </div>
       </div>
 
       {/* Selected Day Agenda */}
-      <div>
+      <div className="lg:w-1/3">
         <h2 className="text-md font-bold text-gray-800 mb-3 flex items-center gap-2">
           <span>📅</span> นัดหมายวันที่ {selectedDate.getDate()} {monthNames[selectedDate.getMonth()]}
         </h2>
@@ -117,7 +126,7 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
           <div className="space-y-3">
             {selectedAppointments.map((appt) => (
               <div key={appt.id} className="p-4 bg-white border border-gray-100 rounded-xl shadow-sm border-l-4 border-l-green-500">
-                <div className="font-semibold text-gray-800 text-md mb-1">{appt.title}</div>
+                <div className="font-semibold text-gray-800 text-md mb-2">{appt.title}</div>
                 
                 <div className="flex items-center text-sm text-gray-600 mb-1 gap-2">
                   <span>🕒</span>
@@ -127,8 +136,26 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
                   })} น.
                 </div>
 
+                {appt.doctorName && (
+                  <div className="flex items-center text-sm text-gray-600 mb-1 gap-2">
+                    <span>👨‍⚕️</span> หมอ: {appt.doctorName}
+                  </div>
+                )}
+
+                {appt.patientName && (
+                  <div className="flex items-center text-sm text-gray-600 mb-1 gap-2">
+                    <span>👤</span> คนไข้: {appt.patientName}
+                  </div>
+                )}
+
+                {appt.disease && (
+                  <div className="flex items-center text-sm text-gray-600 mb-1 gap-2">
+                    <span>💊</span> อาการ: {appt.disease}
+                  </div>
+                )}
+
                 {appt.location && (
-                  <div className="flex items-center text-sm text-gray-500 gap-2">
+                  <div className="flex items-center text-sm text-gray-500 gap-2 mt-1">
                     <span>📍</span> {appt.location}
                   </div>
                 )}

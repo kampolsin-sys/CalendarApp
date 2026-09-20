@@ -16,7 +16,7 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen bg-gray-50 p-4 font-sans">
-      <div className="max-w-md mx-auto">
+      <div className="max-w-5xl mx-auto">
         <h1 className="text-2xl font-bold text-center text-green-600 mb-6 flex items-center justify-center gap-2">
           <span>📅</span> ปฏิทินนัดหมาย
         </h1>

@@ -42,10 +42,13 @@ export async function POST(req: NextRequest) {
           คุณคือผู้ช่วยจัดการตารางนัดหมาย 
           โปรดดึงข้อมูลจากการ์ดนัดหมายหรือภาพนี้ และส่งคืนมาในรูปแบบ JSON ดังนี้:
           {
-            "title": "ชื่อการนัดหมาย (เช่น นัดหมอฟัน, นัดประชุม)",
+            "title": "ชื่อการนัดหมายแบบย่อ (เช่น นัดตรวจสุขภาพ, นัดหมอฟัน)",
             "date": "วันและเวลาในรูปแบบ ISO-8601 (เช่น 2026-10-15T09:00:00Z)",
             "location": "สถานที่ (ถ้ามี)",
-            "description": "รายละเอียดเพิ่มเติม (ถ้ามี)"
+            "description": "รายละเอียดเพิ่มเติม (ถ้ามี)",
+            "doctorName": "ชื่อแพทย์ (ถ้ามี)",
+            "patientName": "ชื่อคนไข้ (ถ้ามี)",
+            "disease": "โรค หรือ อาการ (ถ้ามี)"
           }
           ถ้าไม่มีเวลา ให้ใส่เวลา 09:00:00 เป็นค่าเริ่มต้น
         `;
@@ -93,6 +96,9 @@ export async function POST(req: NextRequest) {
               date: new Date(appointmentData.date),
               location: appointmentData.location || "",
               description: appointmentData.description || "",
+              doctorName: appointmentData.doctorName || null,
+              patientName: appointmentData.patientName || null,
+              disease: appointmentData.disease || null,
               userId: event.source?.userId || null,
             },
           });
