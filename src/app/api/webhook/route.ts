@@ -172,7 +172,7 @@ export async function POST(req: NextRequest) {
           }
         } else if (event.type === "message" && event.message.type === "text") {
           // Ignore text messages in groups to avoid spamming
-          if (event.source.type !== "group" && event.source.type !== "room") {
+          if (event.source?.type !== "group" && event.source?.type !== "room") {
             await lineClient.replyMessage({
               replyToken: (event as any).replyToken as string,
               messages: [{ type: "text", text: "ส่งรูปใบนัดหรือการ์ดนัดหมายมาให้ผมจัดการลงปฏิทินได้เลยครับ! 📅" }],
