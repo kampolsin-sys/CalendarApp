@@ -176,18 +176,28 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
         
         <div className="w-full flex flex-col gap-1 overflow-y-auto">
           {dayAppts.map((appt) => {
-            const stripTitle = (name: string) => {
+            const getFirstName = (name: string) => {
               if (!name) return "";
-              return name.replace(/^(นายแพทย์|แพทย์หญิง|นพ\.|พญ\.|ทพ\.|ทญ\.|นาย|นางสาว|นาง|ด\.ช\.|ด\.ญ\.|คุณ)\s*/g, '');
+              const clean = name.replace(/^(นายแพทย์|แพทย์หญิง|นพ\.|พญ\.|ทพ\.|ทญ\.|นาย|นางสาว|นาง|ด\.ช\.|ด\.ญ\.|คุณ)\s*/g, '').trim();
+              return clean.split(/\s+/)[0]; // เอาแค่ชื่อแรก ไม่เอานามสกุล
             };
+            const getShortDisease = (disease: string) => {
+              if (!disease) return "";
+              // ถ้ามีวงเล็บ ให้ดึงคำในวงเล็บมาโชว์ (เช่น "CA Lung (มะเร็งปอด)" -> "มะเร็งปอด")
+              const match = disease.match(/\(([^)]+)\)/);
+              if (match) return match[1].trim();
+              // ถ้าไม่มีวงเล็บ เอาแค่คำแรก
+              return disease.split(/\s+/)[0];
+            };
+
             return (
-              <div key={appt.id} className="flex flex-col text-[8px] sm:text-xs leading-[1.1] text-left bg-green-100 text-green-800 p-1 sm:p-1.5 rounded w-full break-words whitespace-normal">
-                {appt.doctorName && <span>{stripTitle(appt.doctorName)}</span>}
-                {appt.patientName && <span>{stripTitle(appt.patientName)}</span>}
+              <div key={appt.id} className="flex flex-col text-[9px] sm:text-[10px] leading-tight text-left bg-green-100 text-green-800 p-1 rounded w-full overflow-hidden">
+                {appt.doctorName && <span className="truncate">{getFirstName(appt.doctorName)}</span>}
+                {appt.patientName && <span className="truncate">{getFirstName(appt.patientName)}</span>}
                 {appt.disease ? (
-                  <span>{appt.disease}</span>
+                  <span className="truncate">{getShortDisease(appt.disease)}</span>
                 ) : (
-                  <span>{appt.title}</span>
+                  <span className="truncate">{appt.title}</span>
                 )}
               </div>
             );
