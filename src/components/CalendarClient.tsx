@@ -29,6 +29,27 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
 
   useEffect(() => {
     setMounted(true);
+
+    if (typeof window !== "undefined") {
+      const searchParams = new URLSearchParams(window.location.search);
+      if (searchParams.get("review") === "true") {
+        setFormData({
+          title: searchParams.get("title") || "",
+          date: searchParams.get("date") || "",
+          time: searchParams.get("time") || "09:00",
+          doctorName: searchParams.get("doctorName") || "",
+          patientName: searchParams.get("patientName") || "",
+          disease: searchParams.get("disease") || "",
+          location: searchParams.get("location") || "",
+          description: searchParams.get("description") || "",
+        });
+        setEditingId(null);
+        setIsModalOpen(true);
+        
+        // Clean URL to prevent re-opening on refresh
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
   }, []);
 
   if (!mounted) return <div className="p-10 text-center text-gray-500">กำลังโหลดปฏิทิน...</div>;

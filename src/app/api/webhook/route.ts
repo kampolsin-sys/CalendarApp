@@ -89,42 +89,49 @@ export async function POST(req: NextRequest) {
         }
 
         if (appointmentData.title && appointmentData.date) {
-          // 3. Save to Database (Prisma)
-          const newAppointment = await prisma.appointment.create({
-            data: {
-              title: appointmentData.title,
-              date: new Date(appointmentData.date),
-              location: appointmentData.location || "",
-              description: appointmentData.description || "",
-              doctorName: appointmentData.doctorName || null,
-              patientName: appointmentData.patientName || null,
-              disease: appointmentData.disease || null,
-              userId: event.source?.userId || null,
-            },
-          });
+          // 3. Instead of saving, we construct a review URL
+          const params = new URLSearchParams();
+          params.append("review", "true");
+          params.append("title", appointmentData.title);
+          
+          const d = new Date(appointmentData.date);
+          if (!isNaN(d.getTime())) {
+            const dString = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+            const tString = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+            params.append("date", dString);
+            params.append("time", tString);
+          }
 
-          // 4. Reply with Flex Message
-          const formattedDate = new Date(newAppointment.date).toLocaleString("th-TH", {
-            dateStyle: "long",
-            timeStyle: "short",
-          });
+          if (appointmentData.doctorName) params.append("doctorName", appointmentData.doctorName);
+          if (appointmentData.patientName) params.append("patientName", appointmentData.patientName);
+          if (appointmentData.disease) params.append("disease", appointmentData.disease);
+          if (appointmentData.location) params.append("location", appointmentData.location);
+          if (appointmentData.description) params.append("description", appointmentData.description);
+
+          const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
+          const reviewUrl = `https://${host}/?${params.toString()}`;
+
+          // 4. Reply with Flex Message to review
+          const formattedDate = !isNaN(d.getTime()) 
+            ? d.toLocaleString("th-TH", { dateStyle: "long", timeStyle: "short" }) 
+            : "ไม่ระบุเวลา";
 
           await lineClient.replyMessage({
             replyToken,
             messages: [
               {
                 type: "flex",
-                altText: `เพิ่มนัดหมาย: ${newAppointment.title}`,
+                altText: `ตรวจสอบนัดหมาย: ${appointmentData.title}`,
                 contents: {
                   type: "bubble",
                   body: {
                     type: "box",
                     layout: "vertical",
                     contents: [
-                      { type: "text", text: "📅 บันทึกนัดหมายเรียบร้อย!", weight: "bold", size: "xl", color: "#1DB446" },
-                      { type: "text", text: newAppointment.title, weight: "bold", size: "md", margin: "md", wrap: true },
+                      { type: "text", text: "🔍 สกัดข้อมูลสำเร็จ!", weight: "bold", size: "xl", color: "#F59E0B" },
+                      { type: "text", text: "กรุณาตรวจสอบความถูกต้องก่อนบันทึก", size: "sm", color: "#666666", wrap: true, margin: "sm" },
+                      { type: "text", text: appointmentData.title, weight: "bold", size: "md", margin: "md", wrap: true },
                       { type: "text", text: `🗓️ เวลา: ${formattedDate}`, size: "sm", color: "#666666", wrap: true },
-                      { type: "text", text: `📍 สถานที่: ${newAppointment.location || "-"}`, size: "sm", color: "#666666", wrap: true },
                     ],
                   },
                   footer: {
@@ -134,11 +141,11 @@ export async function POST(req: NextRequest) {
                       {
                         type: "button",
                         style: "primary",
-                        color: "#1DB446",
+                        color: "#F59E0B",
                         action: {
                           type: "uri",
-                          label: "ดูตารางทั้งหมด",
-                          uri: `https://${req.headers.get("x-forwarded-host") || req.headers.get("host")}/`,
+                          label: "ตรวจสอบและบันทึก",
+                          uri: reviewUrl,
                         },
                       },
                     ],
