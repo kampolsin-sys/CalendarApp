@@ -71,12 +71,12 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
         <div className="w-full flex flex-col gap-1 overflow-y-auto">
           {dayAppts.map((appt) => (
             <div key={appt.id} className="flex flex-col text-[10px] sm:text-xs leading-tight text-left bg-green-100 text-green-800 p-1.5 rounded w-full">
-              {appt.doctorName && <span className="truncate">👨‍⚕️หมอ: {appt.doctorName}</span>}
-              {appt.patientName && <span className="truncate">👤คนไข้: {appt.patientName}</span>}
+              {appt.doctorName && <span className="truncate">{appt.doctorName}</span>}
+              {appt.patientName && <span className="truncate">{appt.patientName}</span>}
               {appt.disease ? (
-                <span className="truncate">💊โรค: {appt.disease}</span>
+                <span className="truncate">{appt.disease}</span>
               ) : (
-                <span className="truncate">📌 {appt.title}</span>
+                <span className="truncate">{appt.title}</span>
               )}
             </div>
           ))}
