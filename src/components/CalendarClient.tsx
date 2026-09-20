@@ -314,43 +314,43 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1">หัวข้อนัดหมาย *</label>
-                <input required type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full border p-2 rounded-lg text-sm" placeholder="เช่น นัดตรวจฟัน" />
+                <input required type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full border border-gray-300 p-2 rounded-lg text-sm text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:border-green-500" placeholder="เช่น นัดตรวจฟัน" />
               </div>
               
               <div className="flex gap-2">
                 <div className="flex-1">
                   <label className="block text-xs font-bold text-gray-700 mb-1">วันที่ *</label>
-                  <input required type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="w-full border p-2 rounded-lg text-sm" />
+                  <input required type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="w-full border border-gray-300 p-2 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:border-green-500" />
                 </div>
                 <div className="flex-1">
                   <label className="block text-xs font-bold text-gray-700 mb-1">เวลา *</label>
-                  <input required type="time" value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})} className="w-full border p-2 rounded-lg text-sm" />
+                  <input required type="time" value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})} className="w-full border border-gray-300 p-2 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:border-green-500" />
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1">ชื่อหมอ</label>
-                <input type="text" value={formData.doctorName} onChange={e => setFormData({...formData, doctorName: e.target.value})} className="w-full border p-2 rounded-lg text-sm" placeholder="นพ. สมชาย" />
+                <input type="text" value={formData.doctorName} onChange={e => setFormData({...formData, doctorName: e.target.value})} className="w-full border border-gray-300 p-2 rounded-lg text-sm text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:border-green-500" placeholder="นพ. สมชาย" />
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1">ชื่อคนไข้</label>
-                <input type="text" value={formData.patientName} onChange={e => setFormData({...formData, patientName: e.target.value})} className="w-full border p-2 rounded-lg text-sm" placeholder="คุณ สมหญิง" />
+                <input type="text" value={formData.patientName} onChange={e => setFormData({...formData, patientName: e.target.value})} className="w-full border border-gray-300 p-2 rounded-lg text-sm text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:border-green-500" placeholder="คุณ สมหญิง" />
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1">โรค / อาการ</label>
-                <input type="text" value={formData.disease} onChange={e => setFormData({...formData, disease: e.target.value})} className="w-full border p-2 rounded-lg text-sm" placeholder="ปวดฟันคุด" />
+                <input type="text" value={formData.disease} onChange={e => setFormData({...formData, disease: e.target.value})} className="w-full border border-gray-300 p-2 rounded-lg text-sm text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:border-green-500" placeholder="ปวดฟันคุด" />
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1">สถานที่</label>
-                <input type="text" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="w-full border p-2 rounded-lg text-sm" placeholder="คลินิกทันตกรรม" />
+                <input type="text" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="w-full border border-gray-300 p-2 rounded-lg text-sm text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:border-green-500" placeholder="คลินิกทันตกรรม" />
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1">รายละเอียดเพิ่มเติม</label>
-                <textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full border p-2 rounded-lg text-sm" rows={2}></textarea>
+                <textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full border border-gray-300 p-2 rounded-lg text-sm text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:border-green-500" rows={2}></textarea>
               </div>
 
               <div className="pt-2 flex gap-2">
