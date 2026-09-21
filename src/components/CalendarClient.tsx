@@ -16,6 +16,7 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [viewImage, setViewImage] = useState<string | null>(null);
   
   // Form states
   const [formData, setFormData] = useState({
@@ -274,15 +275,23 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
     <div className="flex flex-col lg:flex-row gap-6 relative">
       {/* Calendar Header & Grid */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 lg:w-2/3">
-        <div className="flex items-center justify-between mb-4">
-          <button onClick={prevMonth} className="p-2 text-gray-500 hover:bg-gray-100 rounded-full">
-            ◀
-          </button>
-          <div className="font-bold text-lg text-gray-800">
-            {monthNames[month]} {year + 543}
+        <div className="flex flex-wrap items-center justify-between mb-4 gap-3">
+          <div className="flex items-center">
+            <button onClick={prevMonth} className="p-2 text-gray-500 hover:bg-gray-100 rounded-full">
+              ◀
+            </button>
+            <div className="font-bold text-lg text-gray-800 mx-2">
+              {monthNames[month]} {year + 543}
+            </div>
+            <button onClick={nextMonth} className="p-2 text-gray-500 hover:bg-gray-100 rounded-full">
+              ▶
+            </button>
           </div>
-          <button onClick={nextMonth} className="p-2 text-gray-500 hover:bg-gray-100 rounded-full">
-            ▶
+          <button 
+            onClick={openAddModal}
+            className="bg-green-600 text-white text-sm px-4 py-2 rounded-lg font-bold hover:bg-green-700 transition-colors shadow-sm flex items-center gap-2"
+          >
+            <span>➕</span> เพิ่มนัดหมาย
           </button>
         </div>
 
@@ -307,12 +316,6 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
           <h2 className="text-md font-bold text-gray-800 flex items-center gap-2">
             <span>📅</span> วันที่ {selectedDate.getDate()} {monthNames[selectedDate.getMonth()]}
           </h2>
-          <button 
-            onClick={openAddModal}
-            className="bg-green-600 text-white text-xs px-3 py-1.5 rounded-lg font-bold hover:bg-green-700 transition-colors"
-          >
-            + เพิ่ม
-          </button>
         </div>
 
         {selectedAppointments.length === 0 ? (
@@ -372,9 +375,12 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
                 
                 {appt.imageBase64 && (
                   <div className="mt-3">
-                    <a href={appt.imageBase64} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 font-semibold border border-blue-200">
+                    <button 
+                      onClick={() => setViewImage(appt.imageBase64)} 
+                      className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 font-semibold border border-blue-200"
+                    >
                       <span>🖼️</span> ดูไฟล์ใบนัดแนบ
-                    </a>
+                    </button>
                   </div>
                 )}
               </div>
@@ -460,6 +466,21 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Image Viewer Modal */}
+      {viewImage && (
+        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4" onClick={() => setViewImage(null)}>
+          <div className="relative max-w-3xl w-full flex flex-col items-center">
+            <button 
+              onClick={() => setViewImage(null)} 
+              className="absolute -top-10 right-0 text-white text-3xl hover:text-gray-300"
+            >
+              &times;
+            </button>
+            <img src={viewImage} alt="Appointment File" className="max-w-full max-h-[85vh] rounded shadow-2xl object-contain bg-white" />
           </div>
         </div>
       )}
