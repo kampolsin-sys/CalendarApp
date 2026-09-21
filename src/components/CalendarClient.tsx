@@ -17,7 +17,11 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [viewImage, setViewImage] = useState<string | null>(null);
-  
+
+  // Swipe states
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
   // Form states
   const [formData, setFormData] = useState({
     title: "",
@@ -73,6 +77,27 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
 
   const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
   const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const minSwipeDistance = 50;
+    
+    if (distance > minSwipeDistance) {
+      nextMonth();
+    } else if (distance < -minSwipeDistance) {
+      prevMonth();
+    }
+  };
 
   // Find appointments for the selected day
   const selectedAppointments = appointments.filter((appt) => {
@@ -211,7 +236,7 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
   // Create grid cells
   const days = [];
   for (let i = 0; i < firstDayOfMonth; i++) {
-    days.push(<div key={`empty-${i}`} className="min-h-[110px] sm:min-h-[120px] bg-gray-50/50 rounded-lg"></div>);
+    days.push(<div key={`empty-${i}`} className="min-h-[90px] sm:min-h-[120px] bg-gray-50/50 rounded-lg"></div>);
   }
 
   for (let d = 1; d <= daysInMonth; d++) {
@@ -230,7 +255,7 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
       <button
         key={d}
         onClick={() => setSelectedDate(new Date(year, month, d))}
-        className={`min-h-[110px] sm:min-h-[120px] w-full flex flex-col items-start justify-start p-1 sm:p-2 rounded-lg border transition-colors overflow-hidden ${
+        className={`min-h-[90px] sm:min-h-[120px] w-full flex flex-col items-start justify-start px-0.5 py-1 sm:p-2 rounded-lg border transition-colors overflow-hidden ${
           isSelected ? "bg-green-50 border-green-500 shadow-sm" : "bg-white border-gray-100 hover:border-green-300"
         }`}
       >
@@ -272,10 +297,15 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 relative">
+    <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 relative">
       {/* Calendar Header & Grid */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 lg:w-2/3">
-        <div className="flex flex-wrap items-center justify-between mb-4 gap-3">
+      <div 
+        className="bg-white sm:rounded-xl shadow-sm sm:border border-gray-100 px-1 py-4 sm:p-4 lg:w-2/3 select-none"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div className="flex flex-wrap items-center justify-between mb-4 gap-3 px-1 sm:px-0">
           <div className="flex items-center">
             <button onClick={prevMonth} className="p-2 text-gray-500 hover:bg-gray-100 rounded-full">
               ◀
@@ -298,14 +328,14 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
         {/* Days of week */}
         <div className="grid grid-cols-7 gap-1 text-center mb-2">
           {dayNames.map((day, idx) => (
-            <div key={day} className={`text-xs sm:text-sm font-medium ${idx === 0 ? "text-red-500" : "text-gray-500"}`}>
+            <div key={day} className={`text-[10px] sm:text-sm font-medium ${idx === 0 ? "text-red-500" : "text-gray-500"}`}>
               {day}
             </div>
           ))}
         </div>
 
         {/* Calendar Grid */}
-        <div className="grid grid-cols-7 gap-1 sm:gap-2">
+        <div className="grid grid-cols-7 gap-1 sm:gap-2 transition-transform duration-300">
           {days}
         </div>
       </div>
