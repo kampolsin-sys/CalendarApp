@@ -17,6 +17,8 @@ model Appointment {
   doctorName  String?
   patientName String?
   disease     String?
+  imageBase64 String?  @db.Text
   userId      String?
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

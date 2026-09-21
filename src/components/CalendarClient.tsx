@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { addAppointment, updateAppointment, deleteAppointment } from "@/app/actions/appointment";
+import { extractAppointmentFromImage } from "@/app/actions/ai";
 
 export default function CalendarClient({ appointments }: { appointments: any[] }) {
   const router = useRouter();
@@ -13,6 +14,7 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAiLoading, setIsAiLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   
   // Form states
@@ -25,6 +27,7 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
     disease: "",
     location: "",
     description: "",
+    imageBase64: "",
   });
 
   useEffect(() => {
@@ -42,6 +45,7 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
           disease: searchParams.get("disease") || "",
           location: searchParams.get("location") || "",
           description: searchParams.get("description") || "",
+          imageBase64: "",
         });
         setEditingId(null);
         setIsModalOpen(true);
@@ -91,6 +95,7 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
       disease: "",
       location: "",
       description: "",
+      imageBase64: "",
     });
     setEditingId(null);
     setIsModalOpen(true);
@@ -110,9 +115,67 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
       disease: appt.disease || "",
       location: appt.location || "",
       description: appt.description || "",
+      imageBase64: appt.imageBase64 || "",
     });
     setEditingId(appt.id);
     setIsModalOpen(true);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsAiLoading(true);
+
+    // Read file and compress to base64
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = async () => {
+        const canvas = document.createElement("canvas");
+        const MAX_WIDTH = 800;
+        let width = img.width;
+        let height = img.height;
+        
+        if (width > MAX_WIDTH) {
+          height = Math.round((height * MAX_WIDTH) / width);
+          width = MAX_WIDTH;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        const base64String = canvas.toDataURL("image/jpeg", 0.6);
+        setFormData(prev => ({ ...prev, imageBase64: base64String }));
+
+        // Call AI extraction
+        const result = await extractAppointmentFromImage(base64String);
+        if (result.success && result.data) {
+          const d = new Date(result.data.date);
+          const dString = !isNaN(d.getTime()) ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}` : formData.date;
+          const tString = !isNaN(d.getTime()) ? `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}` : "09:00";
+
+          setFormData(prev => ({
+            ...prev,
+            title: result.data.title || prev.title,
+            date: dString,
+            time: tString,
+            doctorName: result.data.doctorName || prev.doctorName,
+            patientName: result.data.patientName || prev.patientName,
+            disease: result.data.disease || prev.disease,
+            location: result.data.location || prev.location,
+            description: result.data.description || prev.description,
+          }));
+        } else {
+          alert(result.error || "เกิดข้อผิดพลาดในการสกัดข้อมูล");
+        }
+        setIsAiLoading(false);
+      };
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleDelete = async (id: string) => {
@@ -306,6 +369,14 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
                     {appt.description}
                   </div>
                 )}
+                
+                {appt.imageBase64 && (
+                  <div className="mt-3">
+                    <a href={appt.imageBase64} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 font-semibold border border-blue-200">
+                      <span>🖼️</span> ดูไฟล์ใบนัดแนบ
+                    </a>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -322,6 +393,25 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
             </div>
             
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
+              
+              <div className="mb-4 bg-green-50 p-3 rounded-lg border border-green-200">
+                <label className="block text-sm font-bold text-green-800 mb-2">✨ สแกนจากภาพใบนัด (AI)</label>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={handleImageUpload}
+                  disabled={isAiLoading}
+                  className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-100 file:text-green-700 hover:file:bg-green-200"
+                />
+                {isAiLoading && <div className="text-xs text-green-600 mt-2 font-semibold">⏳ AI กำลังสกัดข้อมูลและเติมลงในฟอร์ม กรุณารอสักครู่...</div>}
+                {formData.imageBase64 && !isAiLoading && (
+                  <div className="mt-2">
+                    <img src={formData.imageBase64} alt="Appointment Card" className="max-h-32 rounded border shadow-sm" />
+                    <button type="button" onClick={() => setFormData(prev => ({ ...prev, imageBase64: "" }))} className="text-xs text-red-500 mt-1 hover:underline">ลบรูปภาพแนบ</button>
+                  </div>
+                )}
+              </div>
+
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1">หัวข้อนัดหมาย *</label>
                 <input required type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full border border-gray-300 p-2 rounded-lg text-sm text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:border-green-500" placeholder="เช่น นัดตรวจฟัน" />

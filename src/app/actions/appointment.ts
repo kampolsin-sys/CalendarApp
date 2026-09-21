@@ -13,6 +13,7 @@ export async function addAppointment(data: any) {
       doctorName: data.doctorName || "",
       patientName: data.patientName || "",
       disease: data.disease || "",
+      imageBase64: data.imageBase64 || null,
     }
   });
   revalidatePath("/");
@@ -29,6 +30,7 @@ export async function updateAppointment(id: string, data: any) {
       doctorName: data.doctorName || "",
       patientName: data.patientName || "",
       disease: data.disease || "",
+      imageBase64: data.imageBase64 || null,
     }
   });
   revalidatePath("/");
