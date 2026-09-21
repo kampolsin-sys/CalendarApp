@@ -291,7 +291,7 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
             onClick={openAddModal}
             className="bg-green-600 text-white text-sm px-4 py-2 rounded-lg font-bold hover:bg-green-700 transition-colors shadow-sm flex items-center gap-2"
           >
-            <span>➕</span> เพิ่มนัดหมาย
+            <span>➕</span> เพิ่ม
           </button>
         </div>
 
