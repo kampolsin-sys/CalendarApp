@@ -18,9 +18,11 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
   const [editingId, setEditingId] = useState<string | null>(null);
   const [viewImage, setViewImage] = useState<string | null>(null);
 
-  // Swipe states
+  // Swipe & Animation states
   const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [isSwiping, setIsSwiping] = useState(false);
+  const [animClass, setAnimClass] = useState("");
 
   // Form states
   const [formData, setFormData] = useState({
@@ -75,28 +77,48 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
   ];
   const dayNames = ["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"];
 
-  const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
-  const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
+  const prevMonth = () => {
+    setAnimClass("anim-slide-right");
+    setCurrentDate(new Date(year, month - 1, 1));
+    setTimeout(() => setAnimClass(""), 300);
+  };
+  
+  const nextMonth = () => {
+    setAnimClass("anim-slide-left");
+    setCurrentDate(new Date(year, month + 1, 1));
+    setTimeout(() => setAnimClass(""), 300);
+  };
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchEnd(null);
     setTouchStart(e.targetTouches[0].clientX);
+    setIsSwiping(true);
+    setAnimClass(""); // Stop any ongoing animation
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX);
+    if (touchStart === null) return;
+    const currentX = e.targetTouches[0].clientX;
+    const diff = currentX - touchStart;
+    setSwipeOffset(diff);
   };
 
   const handleTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-    const distance = touchStart - touchEnd;
+    setIsSwiping(false);
+    if (touchStart === null) return;
+
     const minSwipeDistance = 50;
     
-    if (distance > minSwipeDistance) {
+    // Swipe left (negative offset) goes to next month
+    if (swipeOffset < -minSwipeDistance) {
       nextMonth();
-    } else if (distance < -minSwipeDistance) {
+    } 
+    // Swipe right (positive offset) goes to prev month
+    else if (swipeOffset > minSwipeDistance) {
       prevMonth();
     }
+
+    setSwipeOffset(0);
+    setTouchStart(null);
   };
 
   // Find appointments for the selected day
@@ -297,7 +319,20 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 relative">
+    <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 relative overflow-hidden">
+      <style>{`
+        @keyframes slideInRight {
+          0% { transform: translateX(50%); opacity: 0; }
+          100% { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideInLeft {
+          0% { transform: translateX(-50%); opacity: 0; }
+          100% { transform: translateX(0); opacity: 1; }
+        }
+        .anim-slide-left { animation: slideInRight 0.3s ease-out forwards; }
+        .anim-slide-right { animation: slideInLeft 0.3s ease-out forwards; }
+      `}</style>
+      
       {/* Calendar Header & Grid */}
       <div 
         className="bg-white sm:rounded-xl shadow-sm sm:border border-gray-100 px-1 py-4 sm:p-4 lg:w-2/3 select-none"
@@ -307,19 +342,19 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
       >
         <div className="flex flex-wrap items-center justify-between mb-4 gap-3 px-1 sm:px-0">
           <div className="flex items-center">
-            <button onClick={prevMonth} className="p-2 text-gray-500 hover:bg-gray-100 rounded-full">
+            <button onClick={prevMonth} className="p-2 text-gray-500 hover:bg-gray-100 rounded-full z-10">
               ◀
             </button>
             <div className="font-bold text-lg text-gray-800 mx-2">
               {monthNames[month]} {year + 543}
             </div>
-            <button onClick={nextMonth} className="p-2 text-gray-500 hover:bg-gray-100 rounded-full">
+            <button onClick={nextMonth} className="p-2 text-gray-500 hover:bg-gray-100 rounded-full z-10">
               ▶
             </button>
           </div>
           <button 
             onClick={openAddModal}
-            className="bg-green-600 text-white text-sm px-4 py-2 rounded-lg font-bold hover:bg-green-700 transition-colors shadow-sm flex items-center gap-2"
+            className="bg-green-600 text-white text-sm px-4 py-2 rounded-lg font-bold hover:bg-green-700 transition-colors shadow-sm flex items-center gap-2 z-10"
           >
             <span>➕</span> เพิ่ม
           </button>
@@ -334,8 +369,14 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
           ))}
         </div>
 
-        {/* Calendar Grid */}
-        <div className="grid grid-cols-7 gap-1 sm:gap-2 transition-transform duration-300">
+        {/* Calendar Grid with sliding animation */}
+        <div 
+          className={`grid grid-cols-7 gap-1 sm:gap-2 ${animClass}`}
+          style={{ 
+            transform: isSwiping ? `translateX(${swipeOffset}px)` : 'none',
+            transition: isSwiping ? 'none' : 'transform 0.3s ease-out'
+          }}
+        >
           {days}
         </div>
       </div>
