@@ -450,7 +450,7 @@ export default function CalendarClient({ appointments }: { appointments: any[] }
 
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1">รายละเอียดเพิ่มเติม</label>
-                <textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full border border-gray-300 p-2 rounded-lg text-sm text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:border-green-500" rows={2}></textarea>
+                <textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full border border-gray-300 p-2 rounded-lg text-sm text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:border-green-500" rows={4}></textarea>
               </div>
 
               <div className="pt-2 flex gap-2">
